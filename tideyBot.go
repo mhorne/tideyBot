@@ -47,7 +47,10 @@ func main() {
 	}
 
 	//Load Modules
-	plusPlus.StartPlusPlus()
+	plus := plusPlus.FillScores()
+	logrus.Info("Scores loaded successfully.")
+
+
 
 	discord.AddHandler(messageParser)
 
@@ -61,6 +64,8 @@ func main() {
 
 	// We're running!
 	logrus.Info("TideyBot is up and running :')")
+
+	plus.PrintScores(nil)
 
 	// Wait for a signal to quit
 	c := make(chan os.Signal, 1)

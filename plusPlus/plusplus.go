@@ -1,9 +1,6 @@
 package plusPlus
 
 import (
-	"os"
-	"io/ioutil"
-	"encoding/json"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/Sirupsen/logrus"
@@ -15,8 +12,12 @@ var (
 )
 
 type userScore struct {
-	User  	string 	`json:"username"`
-	Score 	int	`json:"score"`
+	user  	string 	`json:"username"`
+	score 	int	`json:"score"`
+}
+
+type ScoreCollection struct {
+	scores []userScore
 }
 
 func checkErr(e error) {
@@ -25,7 +26,7 @@ func checkErr(e error) {
 	}
 }
 
-func populateScores(s []userScore) {
+/*func populateScores(s []userScore) {
 
 	//Some code to read userscores from the current file
 	b, err := ioutil.ReadFile("scores.js")
@@ -36,9 +37,9 @@ func populateScores(s []userScore) {
 		fmt.Print(i)
 		fmt.Printf((s[i].User))
 	}
-}
+}*/
 
-func writeToFile() {
+/*func writeToFile() {
 
 	//Some code to update the file from current userscore
 	f, err := os.Open(filename)
@@ -56,7 +57,7 @@ func writeToFile() {
 	f.Write(b)
 	f.Sync()
 	f.Close()
-}
+}*/
 
 func modifyScore(user discordgo.User, modifier int) {
 
@@ -67,7 +68,24 @@ func modifyScore(user discordgo.User, modifier int) {
 	//Print new score
 }
 
-func StartPlusPlus() {
+func FillScores(discordgo.Guild) *ScoreCollection{
 
-	writeToFile()
+	var s ScoreCollection = ScoreCollection{}
+
+	return &s
+}
+
+func (s *ScoreCollection) PrintScores(n int) {
+
+	if n != nil {
+		if n > len(s.scores) {
+			n = len(s.scores)
+		}
+	} else {
+		n = len(s.scores)
+	}
+
+	for i := 0; i < n; i++ {
+		fmt.Printf("User %s has a total of %d points.\n", s.scores[i].user, s.scores[i].score)
+	}
 }
