@@ -1,28 +1,26 @@
 package main
 
 import (
-
 	"fmt"
+	"os"
+	"os/signal"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/discordgo"
 	"tideyBot/plusPlus"
-	"os/signal"
-	"os"
 )
 
+// Handles incoming messages and passes them off to the appropriate modules
 func messageParser(s *discordgo.Session, m *discordgo.MessageCreate) {
 	fmt.Println("Message recieved.")
 
-	//Check the message and decide what type of command it is
+	// Check the message and decide what type of command it is
 	//Will be empty for now, until modules that use this are added
 	if m.Content[0] == '!' && len(m.Content) > 1 {
-		switch m.Content {
-		}
+
 	}
 
-	//PlusPlus doesn't use a '!' command, so check for that
-
+	// PlusPlus doesn't use a '!' command, so check for that
 	if len(m.Mentions) > 0 {
 
 	}
@@ -46,12 +44,7 @@ func main() {
 		return
 	}
 
-	//Load Modules
-	plus := plusPlus.FillScores()
-	logrus.Info("Scores loaded successfully.")
-
-
-
+	// Add Event Handlers
 	discord.AddHandler(messageParser)
 
 	err = discord.Open()
@@ -65,7 +58,12 @@ func main() {
 	// We're running!
 	logrus.Info("TideyBot is up and running :')")
 
-	plus.PrintScores(nil)
+	// Load Modules
+	scores, err := plusPlus.FillScores(discord)
+	if err != nil {
+		logrus.Error(err)
+	}
+	scores.PrintScores()
 
 	// Wait for a signal to quit
 	c := make(chan os.Signal, 1)

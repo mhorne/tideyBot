@@ -3,12 +3,7 @@ package plusPlus
 import (
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/Sirupsen/logrus"
 	"fmt"
-)
-
-var (
-	filename string = "scores.js"
 )
 
 type userScore struct {
@@ -20,72 +15,41 @@ type ScoreCollection struct {
 	scores []userScore
 }
 
-func checkErr(e error) {
-	if e != nil {
-		logrus.Error(e)
-	}
-}
+func FillScores(d *discordgo.Session) (*ScoreCollection, error) {
 
-/*func populateScores(s []userScore) {
+	var (
+		sc = ScoreCollection{}
+		guilds []*discordgo.Guild
+		g *discordgo.Guild
+	)
 
-	//Some code to read userscores from the current file
-	b, err := ioutil.ReadFile("scores.js")
-	json.Unmarshal(b, &s)
-	checkErr(err)
+	guilds, err := d.UserGuilds()
+	g, err = d.Guild(guilds[0].ID)
 
-	for i := range s {
-		fmt.Print(i)
-		fmt.Printf((s[i].User))
-	}
-}*/
+	if err == nil {
 
-/*func writeToFile() {
+		fmt.Printf("%#v,guild", g)
+		s := make([]userScore, len(g.Members))
 
-	//Some code to update the file from current userscore
-	f, err := os.Open(filename)
-	checkErr(err)
-
-	test := userScore{
-		User: "Mitcho",
-		Score: 1,
-	}
-
-	b, err := json.Marshal(test)
-
-	fmt.Print(b)
-
-	f.Write(b)
-	f.Sync()
-	f.Close()
-}*/
-
-func modifyScore(user discordgo.User, modifier int) {
-
-	//Iterate through collection, find matching userscore
-	//Modify userscore
-
-	//Write userscore to file
-	//Print new score
-}
-
-func FillScores(discordgo.Guild) *ScoreCollection{
-
-	var s ScoreCollection = ScoreCollection{}
-
-	return &s
-}
-
-func (s *ScoreCollection) PrintScores(n int) {
-
-	if n != nil {
-		if n > len(s.scores) {
-			n = len(s.scores)
+		//Copy all members usernames
+		for i := range g.Members {
+			s[i].user = g.Members[i].User.Username
+			s[i].score = 0
 		}
-	} else {
-		n = len(s.scores)
-	}
 
-	for i := 0; i < n; i++ {
+		fmt.Printf("%#v,score", sc)
+
+		sc := ScoreCollection{s}
+		return &sc, err
+	} else {
+		return &sc, err
+	}
+}
+
+// Prints all userscores in a supplied list
+func (s *ScoreCollection) PrintScores() {
+
+	for i:= range s.scores {
 		fmt.Printf("User %s has a total of %d points.\n", s.scores[i].user, s.scores[i].score)
 	}
 }
