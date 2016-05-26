@@ -7,7 +7,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/discordgo"
-	"tideyBot/plusPlus"
+	"tideyBot/modules"
 )
 
 // Handles incoming messages and passes them off to the appropriate modules
@@ -59,7 +59,7 @@ func main() {
 	logrus.Info("TideyBot is up and running :')")
 
 	// Load Modules
-	scores, err := plusPlus.FillScores(discord)
+	scores, err := modules.FillScores(discord)
 	if err != nil {
 		logrus.Error(err)
 	}
