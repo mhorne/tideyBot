@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+
 	"os"
 	"os/signal"
 
@@ -12,10 +12,9 @@ import (
 
 // Handles incoming messages and passes them off to the appropriate modules
 func messageParser(s *discordgo.Session, m *discordgo.MessageCreate) {
-	fmt.Println("Message recieved.")
 
 	// Check the message and decide what type of command it is
-	//Will be empty for now, until modules that use this are added
+	// Will be empty for now, until modules that use this are added
 	if m.Content[0] == '!' && len(m.Content) > 1 {
 
 	}
@@ -59,11 +58,8 @@ func main() {
 	logrus.Info("TideyBot is up and running :')")
 
 	// Load Modules
-	scores, err := modules.FillScores(discord)
-	if err != nil {
-		logrus.Error(err)
-	}
-	scores.PrintScores()
+	p := modules.New(discord)
+	p.PrintScores()
 
 	// Wait for a signal to quit
 	c := make(chan os.Signal, 1)
