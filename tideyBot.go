@@ -10,23 +10,6 @@ import (
 	"tideyBot/modules"
 )
 
-// Handles incoming messages and passes them off to the appropriate modules
-func messageParser(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	// Check the message and decide what type of command it is
-	// Will be empty for now, until modules that use this are added
-	if m.Content[0] == '!' && len(m.Content) > 1 {
-
-	}
-
-	// PlusPlus doesn't use a '!' command, so check for that
-	if len(m.Mentions) > 0 {
-
-	}
-
-	return
-}
-
 func main() {
 
 	var (
@@ -58,8 +41,7 @@ func main() {
 	logrus.Info("TideyBot is up and running :')")
 
 	// Load Modules
-	p := modules.New(discord)
-	p.PrintScores()
+	modules.Initialize(discord)
 
 	// Wait for a signal to quit
 	c := make(chan os.Signal, 1)

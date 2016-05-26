@@ -17,28 +17,40 @@ type PlusPlus struct {
 	collections map[string]scoreCollection
 }
 
-func New(d *discordgo.Session) *PlusPlus {
+// Create a new instance of PlusPlus
+func Initialize(s *discordgo.Session) {
 
 	p := new(PlusPlus)
 
-	err := p.fillScores(d)
+	err := p.fillScores(s)
 	if err != nil {
 		logrus.Error(err)
 		logrus.Error("PlusPlus module was not initialized!")
 	}
 
-	return p
+	// Add message event handler to the discord session
+	s.AddHandler(p.HandleMessage)
+
+	logrus.Info("Initialized PlusPlus module")
+
+	return
 }
 
-func (p *PlusPlus)HandleMessage(m *discordgo.Message) {
+// Message handler method to be invoked by the discordgo session
+func (p *PlusPlus)HandleMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
+	if len(m.Mentions) > 0 {
+		// TODO: add the parsing logic here
+	}
+
+	return
 }
 
 // This method iterates through the guilds and their members
 // to create a table of scores TODO: Clean up
-func (p *PlusPlus)fillScores(d *discordgo.Session) error {
+func (p *PlusPlus)fillScores(s *discordgo.Session) error {
 
-	guilds, err := d.UserGuilds()
+	guilds, err := s.UserGuilds()
 	if err != nil {
 		return err
 	}
@@ -47,7 +59,7 @@ func (p *PlusPlus)fillScores(d *discordgo.Session) error {
 	p.collections = make(map[string]scoreCollection)
 
 	for i := range guilds {
-		g, err := d.Guild(guilds[i].ID)
+		g, err := s.Guild(guilds[i].ID)
 		if err != nil {
 			return err
 		}
@@ -65,7 +77,6 @@ func (p *PlusPlus)fillScores(d *discordgo.Session) error {
 			sc.scores[g.Members[j].User.Username] = 0 // TODO: Grab value from file
 		}
 
-		fmt.Println(sc)
 		p.collections[p.guildList[i]] = *sc
 	}
 
@@ -73,9 +84,7 @@ func (p *PlusPlus)fillScores(d *discordgo.Session) error {
 }
 
 // Prints all userScores in a supplied list; only for testing right now
-func (p *PlusPlus)PrintScores() {
-
-	fmt.Println("Printing?")
+func (p *PlusPlus)printScores() {
 
 	for i := range p.guildList {
 		for j := range p.collections[p.guildList[i]].userList {
