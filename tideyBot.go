@@ -1,7 +1,6 @@
 package main
 
 import (
-
 	"os"
 	"os/signal"
 
@@ -13,7 +12,7 @@ import (
 func main() {
 
 	var (
-		Token = "MTcwMzI3MzkxOTA0ODU4MTEy.CglgAQ.fXXT3MkRP2B5N05pFwmByTQuUYI"
+		Token = "Bot MTcwMzI3MzkxOTA0ODU4MTEy.CglgAQ.fXXT3MkRP2B5N05pFwmByTQuUYI"
 	)
 
 	// Create a discord session
@@ -25,9 +24,6 @@ func main() {
 		}).Fatal("Failed to create discord session")
 		return
 	}
-
-	// Add Event Handlers
-	discord.AddHandler(messageParser)
 
 	err = discord.Open()
 	if err != nil {
