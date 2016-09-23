@@ -4,10 +4,16 @@ import (
 	"os"
 	"os/signal"
 
+	"tideyBot/modules"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/discordgo"
-	"tideyBot/modules"
 )
+
+func onReady(s *discordgo.Session, event *discordgo.Ready) {
+	logrus.Info("Recieved READY payload")
+	s.UpdateStatus(0, "fuck all y'all")
+}
 
 func main() {
 
@@ -25,6 +31,8 @@ func main() {
 		return
 	}
 
+	discord.AddHandler(onReady)
+
 	err = discord.Open()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -38,6 +46,7 @@ func main() {
 
 	// Load Modules
 	modules.Initialize(discord)
+	modules.Init(discord)
 
 	// Wait for a signal to quit
 	c := make(chan os.Signal, 1)

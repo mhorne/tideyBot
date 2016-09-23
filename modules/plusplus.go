@@ -2,12 +2,11 @@ package modules
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/discordgo"
-	"math"
-	"strconv"
-	"strings"
 )
 
 const MAX_INCREASE = 3
@@ -133,10 +132,11 @@ func (p *PlusPlus) modifyScore(s *discordgo.Session, guild string, channel strin
 
 	// Send message to the channel
 	var message string
-	if mod > 0 {
+	if mod >= 0 {
 		message = "Nice! " + user + " just gained " + strconv.Itoa(mod) + " points. They now have a total of " + strconv.Itoa(newScore) + "!"
 	} else {
-		message = "Ouch! " + user + " just lost " + strconv.Itoa(math.Abs(mod)) + " points. They now have a total of " + strconv.Itoa(newScore) + "!"
+		mod = -mod
+		message = "Ouch! " + user + " just lost " + strconv.Itoa(mod) + " points. They now have a total of " + strconv.Itoa(newScore) + "!"
 	}
 
 	s.ChannelMessageSend(channel, message)
