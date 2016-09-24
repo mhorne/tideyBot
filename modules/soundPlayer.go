@@ -190,6 +190,33 @@ var WOW *SoundCollection = &SoundCollection{
 	},
 }
 
+var HYPE *SoundCollection = &SoundCollection{
+	Prefix: "hype",
+	Commands: []string{
+		"!hype",
+		"!na",
+		"!cs",
+	},
+	Sounds: []*Sound{
+		createSound("bestteam", 100, 250),
+		createSound("brabrabravo", 100, 250),
+		createSound("brabrabravo2", 100, 250),
+		createSound("cans", 100, 250),
+		createSound("cans2", 100, 250),
+		createSound("givenoise", 100, 250),
+		createSound("givenoise2", 100, 250),
+		createSound("givenoise3", 100, 250),
+		createSound("goingtowar", 100, 250),
+		createSound("herewegoagain", 100, 250),
+		createSound("millions", 100, 250),
+		createSound("poland", 100, 250),
+		createSound("ready", 100, 250),
+		createSound("show", 100, 250),
+		createSound("veryexciting", 100, 250),
+		createSound("warisover", 100, 250),
+	},
+}
+
 var COLLECTIONS []*SoundCollection = []*SoundCollection{
 	AIRHORN,
 	KHALED,
@@ -198,6 +225,7 @@ var COLLECTIONS []*SoundCollection = []*SoundCollection{
 	COW,
 	BIRTHDAY,
 	WOW,
+	HYPE,
 }
 
 // Create a Sound struct
