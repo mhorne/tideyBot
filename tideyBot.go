@@ -4,14 +4,15 @@ import (
 	"os"
 	"os/signal"
 
-	"tideyBot/modules"
+	"tideyBot/modules/plusplus"
+	"tideyBot/modules/soundPlayer"
 
-	"github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/discordgo"
 )
 
 func onReady(s *discordgo.Session, event *discordgo.Ready) {
-	logrus.Info("Recieved READY payload")
+	log.Info("Recieved READY payload")
 	s.UpdateStatus(0, "fuck all y'all")
 }
 
@@ -22,10 +23,10 @@ func main() {
 	)
 
 	// Create a discord session
-	logrus.Info("Starting discord session...")
+	log.Info("Starting discord session...")
 	discord, err := discordgo.New(Token)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"error": err,
 		}).Fatal("Failed to create discord session")
 		return
@@ -35,22 +36,22 @@ func main() {
 
 	err = discord.Open()
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"error": err,
 		}).Fatal("Failed to create discord websocket connection")
 		return
 	}
+	defer discord.Close()
 
 	// We're running!
-	logrus.Info("TideyBot is up and running :')")
+	log.Info("TideyBot is up and running :')")
 
 	// Load Modules
-	modules.Initialize(discord)
-	modules.Init(discord)
+	plusplus.Initialize(discord)
+	soundPlayer.Initialize(discord)
 
 	// Wait for a signal to quit
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	<-c
-	discord.Close()
 }

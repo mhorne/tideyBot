@@ -1,4 +1,4 @@
-package modules
+package soundPlayer
 
 import (
 	"bytes"
@@ -18,6 +18,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	redis "gopkg.in/redis.v3"
+)
+
+const (
+	Module_Name = "SoundPlayer"
 )
 
 var (
@@ -226,6 +230,10 @@ var COLLECTIONS []*SoundCollection = []*SoundCollection{
 	BIRTHDAY,
 	WOW,
 	HYPE,
+}
+
+func GetModuleName() string {
+	return Module_Name
 }
 
 // Create a Sound struct
@@ -694,7 +702,7 @@ func (p *soundPlayer) onMessageCreate(s *discordgo.Session, m *discordgo.Message
 	}
 }
 
-func Init(s *discordgo.Session) {
+func Initialize(s *discordgo.Session) {
 	var (
 		//		Token = flag.String("t", "", "Discord Authentication Token")
 		Redis = flag.String("r", "", "Redis Connection String")
@@ -710,7 +718,6 @@ func Init(s *discordgo.Session) {
 	}
 
 	// Preload all the sounds
-	log.Info("Preloading sounds...")
 	for _, coll := range COLLECTIONS {
 		coll.Load()
 	}
@@ -733,5 +740,5 @@ func Init(s *discordgo.Session) {
 	s.AddHandler(player.onMessageCreate)
 
 	// We made it
-	log.Info("SoundPlayer module initialized")
+	log.Info("Initialized SoundPlayer module")
 }
