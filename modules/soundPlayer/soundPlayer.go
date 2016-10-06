@@ -49,7 +49,7 @@ type Play struct {
 	UserID    string
 	Sound     *Sound
 
-	// The next play to occur after this, only used for chaining sounds like anotha
+	// The next play to occur after this, only used forshould have chaining sounds like anotha
 	Next *Play
 
 	// If true, this was a forced play using a specific airhorn sound name

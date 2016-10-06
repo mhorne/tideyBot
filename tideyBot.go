@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"os"
 	"os/signal"
 
@@ -21,6 +22,14 @@ func main() {
 	var (
 		Token = "Bot MTcwMzI3MzkxOTA0ODU4MTEy.CglgAQ.fXXT3MkRP2B5N05pFwmByTQuUYI"
 	)
+
+	// Connect to the database
+	db, err := sql.Open("sqlite3", "./foo.db")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	defer db.Close()
 
 	// Create a discord session
 	log.Info("Starting discord session...")
@@ -47,7 +56,7 @@ func main() {
 	log.Info("TideyBot is up and running :')")
 
 	// Load Modules
-	plusplus.Initialize(discord)
+	plusplus.Initialize(discord, db)
 	soundPlayer.Initialize(discord)
 
 	// Wait for a signal to quit

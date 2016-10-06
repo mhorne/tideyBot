@@ -1,12 +1,13 @@
 package plusplus
 
 import (
+	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/discordgo"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -27,6 +28,7 @@ type scoreCollection struct {
 
 type plusPlus struct {
 	session     *discordgo.Session
+	db          *sql.DB
 	guildList   []string
 	collections map[string]scoreCollection
 }
@@ -36,13 +38,14 @@ func GetModuleName() string {
 }
 
 // Create a new instance of PlusPlus
-func Initialize(s *discordgo.Session) {
+func Initialize(s *discordgo.Session, db *sql.DB) {
 
 	p := new(plusPlus)
 	p.session = s
+	p.db = db
 
 	// Populate the map of scores
-	err := p.fillScores()
+	err := p.checkDB()
 	if err != nil {
 		log.Error(err)
 		log.Error("PlusPlus module was not initialized!")
@@ -115,25 +118,30 @@ func (p *plusPlus) HandleMessage(s *discordgo.Session, m *discordgo.MessageCreat
 		}
 	}
 
-	messageChan, err := s.Channel(m.ChannelID)
-	guildName := messageChan.GuildID
+	messageChan, err := p.session.Channel(m.ChannelID)
+	guildID := messageChan.GuildID
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	// Loop through all mentioned users and update their score
+	tx, err := p.db.Begin()
+
 	if mod != 0 {
 		for i := range m.Mentions {
-			p.modifyScore(guildName, m.ChannelID, m.Mentions[i].Username, mod)
+			p.modifyScore(tx, m.ChannelID, guildID, m.Mentions[i].ID, mod)
 		}
 	}
 
-	return
+	err = tx.Commit()
+	if err != nil {
+		log.Error(err)
+	}
 }
 
 // Function to modify an existing user's score
-func (p *plusPlus) modifyScore(guild string, channel string, user string, mod int) {
+func (p *plusPlus) modifyScore(tx *sql.Tx, channelID string, guildID string, userID string, mod int) {
 
 	// Cap the amount of points a user can gain or lose at once
 	if mod > max_increase {
@@ -142,22 +150,65 @@ func (p *plusPlus) modifyScore(guild string, channel string, user string, mod in
 		mod = max_decrease
 	}
 
-	// Update the score
-	p.collections[guild].scores[user] += mod
-	newScore := p.collections[guild].scores[user]
+	guild, err := p.session.Guild(guildID)
+	if err != nil {
+		log.Error(err)
+	}
+	user, err := p.session.User(userID)
+	if err != nil {
+		log.Error(err)
+	}
+
+	// Check if has an exisiting score in the database
+	var score int
+	query := "SELECT score FROM scores WHERE guild_id=? AND user_id=?"
+	err = p.db.QueryRow(query, guildID, userID).Scan(&score)
+
+	if err != nil {
+		score = mod
+
+		stmt, err := tx.Prepare("INSERT INTO SCORES VALUES (?, ?, ?, ?, ?)")
+		_, err = stmt.Exec(guildID, userID, guild.Name, user.Username, score)
+		if err != nil {
+			log.Error("Score could not be updated")
+			log.Error(err)
+			return
+		}
+		stmt.Close()
+	} else {
+		stmt, err := tx.Prepare("UPDATE SCORES SET SCORE=? WHERE GUILD_ID=? AND USER_ID=?")
+		_, err = stmt.Exec(score+mod, guildID, userID)
+		if err != nil {
+			log.Error("Score could not be updated")
+			log.Error(err)
+			return
+		}
+		stmt.Close()
+	}
 
 	// Send message to the channel
 	var message string
 	if mod >= 0 {
-		message = "Nice! " + user + " just gained " + strconv.Itoa(mod) + " points. They now have a total of " + strconv.Itoa(newScore) + "!"
+		message = fmt.Sprintf("Nice! %s just gained %d points. They now have a total of %d!", user.Username, mod, score)
 	} else {
 		mod = -mod
-		message = "Ouch! " + user + " just lost " + strconv.Itoa(mod) + " points. They now have a total of " + strconv.Itoa(newScore) + "!"
+		message = fmt.Sprintf("Ouch! %s just lost %d points. They now have a total of %d!", user.Username, mod, score)
 	}
 
-	p.session.ChannelMessageSend(channel, message)
+	p.session.ChannelMessageSend(channelID, message)
+}
 
-	return
+func (p *plusPlus) checkDB() error {
+	sqlStmt := `CREATE TABLE IF NOT EXISTS SCORES (	GUILD_ID INTEGER NOT NULL,
+													USER_ID TEXT NOT NULL,
+													GUILD_NAME TEXT,
+													USER_NAME TEXT,
+													SCORE INTEGER NOT NULL
+													PRIMARY KEY (GUILD_ID, USER_ID));`
+
+	_, err := p.db.Exec(sqlStmt)
+
+	return err
 }
 
 // This method iterates through the guilds and their members
