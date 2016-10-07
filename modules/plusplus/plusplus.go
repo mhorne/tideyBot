@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	Module_Name = "PlusPlus"
+	ModuleName = "PlusPlus"
 )
 
 var (
-	max_increase = 3
-	max_decrease = -3
+	maxIncrease = 3
+	maxDecrease = -3
 )
 
 // scoreCollection contains a list of
@@ -34,10 +34,10 @@ type plusPlus struct {
 }
 
 func GetModuleName() string {
-	return Module_Name
+	return ModuleName
 }
 
-// Create a new instance of PlusPlus
+//Initialize plusPlus struct
 func Initialize(s *discordgo.Session, db *sql.DB) {
 
 	p := new(plusPlus)
@@ -68,8 +68,8 @@ func (p *plusPlus) HandleMessage(s *discordgo.Session, m *discordgo.MessageCreat
 
 	// Use a simple state machine to parse the incoming messages
 	// Looks for " ++ " and " -- ",  and longer segments of these
-	var state int = 0
-	var mod int = 0
+	var state int
+	var mod int
 
 	for _, i := range m.Content {
 		switch state {
@@ -144,31 +144,27 @@ func (p *plusPlus) HandleMessage(s *discordgo.Session, m *discordgo.MessageCreat
 func (p *plusPlus) modifyScore(tx *sql.Tx, channelID string, guildID string, userID string, mod int) {
 
 	// Cap the amount of points a user can gain or lose at once
-	if mod > max_increase {
-		mod = max_increase
-	} else if mod < max_decrease {
-		mod = max_decrease
-	}
-
-	guild, err := p.session.Guild(guildID)
-	if err != nil {
-		log.Error(err)
-	}
-	user, err := p.session.User(userID)
-	if err != nil {
-		log.Error(err)
+	if mod > maxIncrease {
+		mod = maxIncrease
+	} else if mod < maxDecrease {
+		mod = maxDecrease
 	}
 
 	// Check if has an exisiting score in the database
 	var score int
 	query := "SELECT score FROM scores WHERE guild_id=? AND user_id=?"
-	err = p.db.QueryRow(query, guildID, userID).Scan(&score)
+	err := p.db.QueryRow(query, guildID, userID).Scan(&score)
+
+	user, err := p.session.User(userID)
+	if err != nil {
+		log.Error(err)
+	}
 
 	if err != nil {
 		score = mod
 
-		stmt, err := tx.Prepare("INSERT INTO SCORES VALUES (?, ?, ?, ?, ?)")
-		_, err = stmt.Exec(guildID, userID, guild.Name, user.Username, score)
+		stmt, err := tx.Prepare("INSERT INTO SCORES(GUILD_ID, USER_ID, SCORE) VALUES(?, ?, ?)")
+		_, err = stmt.Exec(guildID, userID, score)
 		if err != nil {
 			log.Error("Score could not be updated")
 			log.Error(err)
@@ -176,8 +172,10 @@ func (p *plusPlus) modifyScore(tx *sql.Tx, channelID string, guildID string, use
 		}
 		stmt.Close()
 	} else {
+		score += mod
+
 		stmt, err := tx.Prepare("UPDATE SCORES SET SCORE=? WHERE GUILD_ID=? AND USER_ID=?")
-		_, err = stmt.Exec(score+mod, guildID, userID)
+		_, err = stmt.Exec(score, guildID, userID)
 		if err != nil {
 			log.Error("Score could not be updated")
 			log.Error(err)
@@ -199,13 +197,7 @@ func (p *plusPlus) modifyScore(tx *sql.Tx, channelID string, guildID string, use
 }
 
 func (p *plusPlus) checkDB() error {
-	sqlStmt := `CREATE TABLE IF NOT EXISTS SCORES (	GUILD_ID INTEGER NOT NULL,
-													USER_ID TEXT NOT NULL,
-													GUILD_NAME TEXT,
-													USER_NAME TEXT,
-													SCORE INTEGER NOT NULL
-													PRIMARY KEY (GUILD_ID, USER_ID));`
-
+	sqlStmt := `CREATE TABLE IF NOT EXISTS SCORES (GUILD_ID TEXT NOT NULL, USER_ID TEXT NOT NULL, SCORE INTEGER NOT NULL, PRIMARY KEY (GUILD_ID, USER_ID));`
 	_, err := p.db.Exec(sqlStmt)
 
 	return err
