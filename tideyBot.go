@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	"tideyBot/modules/plusplus"
+	"tideyBot/modules/plusPlus"
 	"tideyBot/modules/soundPlayer"
 
 	log "github.com/Sirupsen/logrus"
@@ -57,8 +57,8 @@ func main() {
 	log.Info("TideyBot is up and running :')")
 
 	// Load Modules
-	plusplus.Initialize(discord, db)
-	soundPlayer.Initialize(discord)
+	go plusPlus.Initialize(discord, db)
+	go soundPlayer.Initialize(discord)
 
 	// Wait for a signal to quit
 	c := make(chan os.Signal, 1)
