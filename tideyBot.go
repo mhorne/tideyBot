@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"os/signal"
 	"strings"
@@ -19,9 +20,9 @@ const ConfigPath = "./tidey.conf"
 
 // Config is a struct to hold the configuration info
 type Config struct {
-	Token    string
-	DBPath   string
-	LogLevel string
+	Token    string `toml:"token"`
+	DBPath   string `toml:"database_path"`
+	LogLevel string `toml:"log_level"`
 }
 
 func onReady(s *discordgo.Session, event *discordgo.Ready) {
@@ -29,26 +30,44 @@ func onReady(s *discordgo.Session, event *discordgo.Ready) {
 	s.UpdateStatus(0, "fuck all y'all")
 }
 
-func readConfig() (*Config, error) {
+func configure() (*Config, error) {
 	config := new(Config)
 
+	// Attempt to read configuration info from file
 	_, err := toml.DecodeFile(ConfigPath, &config)
 	if err != nil {
 		return config, err
 	}
 
-	log.Info("Configuration loaded successfully")
+	// Set log level
+	config.LogLevel = strings.ToUpper(config.LogLevel)
 
+	switch config.LogLevel {
+	case "DEBUG":
+		log.SetLevel(log.DebugLevel)
+	case "INFO":
+		log.SetLevel(log.InfoLevel)
+	case "WARN":
+		log.SetLevel(log.WarnLevel)
+	case "ERROR":
+		log.SetLevel(log.ErrorLevel)
+	case "FATAL":
+		log.SetLevel(log.FatalLevel)
+	}
+
+	// Bot tokens should be of the form "Bot ..."
 	if !strings.Contains(config.Token, "Bot ") {
 		config.Token = "Bot " + config.Token
 	}
 
+	fmt.Println(config)
+	log.Info("Configuration loaded successfully")
 	return config, nil
 }
 
 func main() {
 	// Read configuration data from file
-	config, err := readConfig()
+	config, err := configure()
 	if err != nil {
 		log.Fatal(err)
 		return
