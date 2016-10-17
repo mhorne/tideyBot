@@ -2,28 +2,78 @@ package main
 
 import (
 	//"database/sql"
+	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 
 	//"tideyBot/modules/plusPlus"
 	"tideyBot/modules/soundPlayer"
 
+	"github.com/BurntSushi/toml"
 	log "github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/discordgo"
 	//_ "github.com/mattn/go-sqlite3"
 
 )
 
+// Location of the main tideyBot configuration file
+const ConfigPath = "./tidey.conf"
+
+// Config is a struct to hold the configuration info
+type Config struct {
+	Token    string `toml:"token"`
+	DBPath   string `toml:"database_path"`
+	LogLevel string `toml:"log_level"`
+}
+
 func onReady(s *discordgo.Session, event *discordgo.Ready) {
 	log.Info("Recieved READY payload")
 	s.UpdateStatus(0, "fuck all y'all")
 }
 
-func main() {
+func configure() (*Config, error) {
+	config := new(Config)
 
-	var (
-		Token = "Bot MTcwMzI3MzkxOTA0ODU4MTEy.CglgAQ.fXXT3MkRP2B5N05pFwmByTQuUYI"
-	)
+	// Attempt to read configuration info from file
+	_, err := toml.DecodeFile(ConfigPath, &config)
+	if err != nil {
+		return config, err
+	}
+
+	// Set log level
+	config.LogLevel = strings.ToUpper(config.LogLevel)
+
+	switch config.LogLevel {
+	case "DEBUG":
+		log.SetLevel(log.DebugLevel)
+	case "INFO":
+		log.SetLevel(log.InfoLevel)
+	case "WARN":
+		log.SetLevel(log.WarnLevel)
+	case "ERROR":
+		log.SetLevel(log.ErrorLevel)
+	case "FATAL":
+		log.SetLevel(log.FatalLevel)
+	}
+
+	// Bot tokens should be of the form "Bot ..."
+	if !strings.Contains(config.Token, "Bot ") {
+		config.Token = "Bot " + config.Token
+	}
+
+	fmt.Println(config)
+	log.Info("Configuration loaded successfully")
+	return config, nil
+}
+
+func main() {
+	// Read configuration data from file
+	config, err := configure()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
 	// Connect to the database
 	/*db, err := sql.Open("sqlite3", "./tidey.db")
@@ -35,7 +85,7 @@ func main() {
 
 	// Create a discord session
 	log.Info("Starting discord session...")
-	discord, err := discordgo.New(Token)
+	discord, err := discordgo.New(config.Token)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
