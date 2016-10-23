@@ -1,5 +1,5 @@
 #Bot token to be used to connect to discord
-token = ""
+token = "MTcwMzI3MzkxOTA0ODU4MTEy.Cucu9w.RweOyuP68Wy2uNKdkzrHGFS77fI"
 
 #Define the location of the SQLite database
 database_path = "./db/tidey.db"

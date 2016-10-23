@@ -1,24 +1,22 @@
 package main
 
 import (
-	//"database/sql"
-	"fmt"
+	"database/sql"
 	"os"
 	"os/signal"
 	"strings"
 
-	//"tideyBot/modules/plusPlus"
+	"tideyBot/modules/plusPlus"
 	"tideyBot/modules/soundPlayer"
 
 	"github.com/BurntSushi/toml"
 	log "github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/discordgo"
-	//_ "github.com/mattn/go-sqlite3"
-
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // Location of the main tideyBot configuration file
-const ConfigPath = "./tidey.conf"
+const ConfigPath = "./tidey.toml"
 
 // Config is a struct to hold the configuration info
 type Config struct {
@@ -62,7 +60,6 @@ func configure() (*Config, error) {
 		config.Token = "Bot " + config.Token
 	}
 
-	fmt.Println(config)
 	log.Info("Configuration loaded successfully")
 	return config, nil
 }
@@ -76,12 +73,12 @@ func main() {
 	}
 
 	// Connect to the database
-	/*db, err := sql.Open("sqlite3", "./tidey.db")
+	db, err := sql.Open("sqlite3", "./tidey.db")
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	defer db.Close()*/
+	defer db.Close()
 
 	// Create a discord session
 	log.Info("Starting discord session...")
@@ -108,7 +105,7 @@ func main() {
 	log.Info("TideyBot is up and running :')")
 
 	// Load Modules
-	//go plusPlus.Initialize(discord, db)
+	go plusPlus.Initialize(discord, db)
 	go soundPlayer.Initialize(discord)
 
 	// Wait for a signal to quit

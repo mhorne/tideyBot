@@ -69,7 +69,7 @@ func (p *PlusPlus) handleMessage(s *discordgo.Session, m *discordgo.MessageCreat
 
 	// Use a regular expression to check the message
 	// for instances of " ++ " or " -- "
-	re, err := regexp.Compile(`\s([++]+|[--]+)([\s]|[?!.*])`)
+	re, err := regexp.Compile(`\s([++]+|[--]+)([\s]|\z)`)
 	match := re.FindString(m.Content)
 
 	// If we have a match, continue
@@ -93,12 +93,17 @@ func (p *PlusPlus) handleMessage(s *discordgo.Session, m *discordgo.MessageCreat
 		mod = -strings.Count(match, "-") + 1
 	}
 
-	// Loop through all mentioned users and update their score
+	// Open a new SQL transaction
 	tx, err := p.db.Begin()
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
+	// Loop through all mentioned users and update their score
 	if mod != 0 {
 		for i := range m.Mentions {
-			go p.modifyScore(tx, m.ChannelID, guildID, m.Mentions[i].ID, mod)
+			p.modifyScore(tx, m.ChannelID, guildID, m.Mentions[i].ID, mod)
 		}
 	}
 
@@ -119,16 +124,26 @@ func (p *PlusPlus) modifyScore(tx *sql.Tx, channelID string, guildID string, use
 	}
 
 	// Check if has an exisiting score in the database
-	var score int
+	var (
+		score int
+		stmt  *sql.Stmt
+		err   error
+	)
+
 	query := "SELECT score FROM scores WHERE guild_id=? AND user_id=?"
-	err := p.db.QueryRow(query, guildID, userID).Scan(&score)
+	err = p.db.QueryRow(query, guildID, userID).Scan(&score)
 
 	// Add SQL statement to transaction either
 	// updating an entry or inserting a new one
 	if err != nil {
 		score = mod
 
-		stmt, err := tx.Prepare("INSERT INTO scores(guild_id, user_id, score) VALUES(?, ?, ?)")
+		stmt, err = tx.Prepare("INSERT INTO scores(guild_id, user_id, score) VALUES(?, ?, ?)")
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
 		_, err = stmt.Exec(guildID, userID, score)
 		if err != nil {
 			log.Error("Score could not be updated")
@@ -139,7 +154,7 @@ func (p *PlusPlus) modifyScore(tx *sql.Tx, channelID string, guildID string, use
 	} else {
 		score += mod
 
-		stmt, err := tx.Prepare("UPDATE scores SET score=? WHERE guild_id=? AND user_id=?")
+		stmt, err = tx.Prepare("UPDATE scores SET score=? WHERE guild_id=? AND user_id=?")
 		_, err = stmt.Exec(score, guildID, userID)
 		if err != nil {
 			log.Error("Score could not be updated")
@@ -153,6 +168,7 @@ func (p *PlusPlus) modifyScore(tx *sql.Tx, channelID string, guildID string, use
 	user, err := p.session.User(userID)
 	if err != nil {
 		log.Error(err)
+		return
 	}
 
 	// Send message to the channel

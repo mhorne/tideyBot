@@ -225,8 +225,8 @@ func (p *SoundPlayer) createPlay(user *discordgo.User, guild *discordgo.Guild, c
 }
 
 // Prepares and enqueues a play into the ratelimit/buffer guild queue
-func (p *SoundPlayer) enqueuePlay(user *discordgo.User, guild *discordgo.Guild, coll *soundCollection, sound *sound) {
-	newPlay := p.createPlay(user, guild, coll, sound)
+func (p *SoundPlayer) enqueuePlay(user *discordgo.User, guild *discordgo.Guild, coll *soundCollection, s *sound) {
+	newPlay := p.createPlay(user, guild, coll, s)
 	if newPlay == nil {
 		return
 	}
@@ -412,14 +412,14 @@ func (p *SoundPlayer) onMessageCreate(s *discordgo.Session, m *discordgo.Message
 	if len(m.Mentions) > 0 && m.Author.ID == p.owner && len(parts) > 0 {
 		mentioned := false
 		for _, mention := range m.Mentions {
-			mentioned = (mention.ID == s.State.Ready.User.ID)
+			mentioned = (mention.ID == p.session.State.Ready.User.ID)
 			if mentioned {
 				break
 			}
 		}
 
 		if mentioned {
-			p.handleBotControlMessages(s, m, parts, guild)
+			p.handleBotControlMessages(p.session, m, parts, guild)
 		}
 		return
 	}
@@ -457,6 +457,7 @@ func Initialize(s *discordgo.Session) {
 
 	//Create new SoundPlayer instance
 	player := new(SoundPlayer)
+	player.queues = make(map[string]chan *play)
 	player.session = s
 	if *owner != "" {
 		player.owner = *owner
